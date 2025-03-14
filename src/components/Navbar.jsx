@@ -1,53 +1,70 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartContext"; // ✅ Import CartContext
+import { useCart } from "../context/CartContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import CartModal from "./CartModal";
 import ProfileModal from "./ProfileModal";
-import OrderModal from "./OrderModal"; // ✅ Import OrderModal
+import OrderModal from "./OrderModal";
 
 const Navbar = ({ onScrollToCatalog, onScrollToHero, onScrollToContact }) => {
   const { user, logout } = useAuth();
-  const { cartItems } = useCart(); // ✅ Access cart items
+  const { cartItems } = useCart();
   const [isOpen, setIsOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isOrdersOpen, setIsOrdersOpen] = useState(false); // ✅ State for OrderModal
+  const [isOrdersOpen, setIsOrdersOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
-  if (location.pathname === "/auth/Login" || location.pathname === "/auth/Signup") return null;
+  const mobileMenuRef = useRef(null);
 
+  // ✅ Ensure Navbar menu is closed on page load
+  useEffect(() => {
+    setIsOpen(false);
+  }, []); // Runs only once on mount
+
+  // ✅ Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target) &&
+        !event.target.closest(".mobile-menu-button")
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // ✅ Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // ✅ Home button handler (ensures scroll to top)
   const handleHomeClick = () => {
+    setIsOpen(false); // Close mobile menu
     if (location.pathname !== "/") {
       navigate("/");
-      setTimeout(() => onScrollToHero(), 200);
+      setTimeout(scrollToTop, 100); // Small delay to ensure navigation completes before scrolling
     } else {
-      onScrollToHero();
+      scrollToTop(); // If already on "/", just scroll up
     }
   };
 
-  const handleCatalogClick = () => {
-    if (location.pathname !== "/") {
-      window.location.href = "/";
-      setTimeout(() => onScrollToCatalog(), 500);
-    } else {
-      onScrollToCatalog();
-    }
-  };
-
-  const handleContactClick = () => {
-    if (location.pathname !== "/") {
-      window.location.href = "/";
-      setTimeout(() => onScrollToContact(), 500);
-    } else {
-      onScrollToContact();
-    }
-  };
+  if (location.pathname === "/auth/Login" || location.pathname === "/auth/Signup") return null;
 
   return (
-    <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-50">
+    <nav className="fixed top-0 left-0 w-full bg-[#58bf5b] shadow-md z-50">
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
         
         {/* ✅ Left Section: Logo */}
@@ -59,18 +76,14 @@ const Navbar = ({ onScrollToCatalog, onScrollToHero, onScrollToContact }) => {
         {/* ✅ Desktop Navigation */}
         <div className="hidden md:flex space-x-6 text-lg font-medium">
           <button onClick={handleHomeClick} className="hover:text-blue-500">Home</button>
-          <button onClick={handleCatalogClick} className="hover:text-blue-500">Catalog</button>
+          <button onClick={onScrollToCatalog} className="hover:text-blue-500">Catalog</button>
 
           {user && (
             <>
               <button onClick={() => setIsProfileOpen(true)} className="hover:text-blue-500">Profile</button>
               <button onClick={() => setIsOrdersOpen(true)} className="hover:text-blue-500">Orders</button>
-              <button onClick={() => { setIsOpen(false); handleContactClick(); }} className="hover:text-blue-500">
-                Contact
-              </button>
-              <button onClick={logout} className="bg-red-500 text-white py-2 px-4 rounded">
-                Logout
-              </button>
+              <button onClick={onScrollToContact} className="hover:text-blue-500">Contact</button>
+              <button onClick={logout} className="bg-red-500 text-white py-2 px-4 rounded">Logout</button>
             </>
           )}
 
@@ -102,7 +115,7 @@ const Navbar = ({ onScrollToCatalog, onScrollToHero, onScrollToContact }) => {
           </div>
 
           {/* ✅ Mobile Menu Toggle */}
-          <button className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
+          <button className="mobile-menu-button md:hidden" onClick={() => setIsOpen(!isOpen)}>
             <motion.svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <motion.path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                 d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
@@ -114,20 +127,38 @@ const Navbar = ({ onScrollToCatalog, onScrollToHero, onScrollToContact }) => {
       {/* ✅ Mobile Dropdown */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div className="md:hidden absolute top-full pt-[15vh] w-full h-screen bg-slate-950/70 backdrop-blur-md shadow-md border-t">
-            <div className="flex flex-col items-center py-4 space-y-4">
-              <button onClick={() => { setIsOpen(false); handleHomeClick(); }} className="hover:text-blue-500">
+          <motion.div 
+            className="md:hidden absolute top-full pt-[10vh] w-full h-screen bg-slate-950/70 backdrop-blur-md shadow-md border-t flex justify-center items-start"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            {/* ✅ Transparent Clickable Background */}
+            <div className="absolute inset-0" onClick={() => setIsOpen(false)}></div>
+
+            {/* ✅ Mobile Menu */}
+            <motion.div
+              ref={mobileMenuRef}
+              className="flex flex-col items-center py-4 space-y-4 relative bg-slate-950/20 rounded-lg max-w-sm shadow-lg p-4 border"
+              onClick={(e) => e.stopPropagation()} // Prevents menu from closing when clicking inside
+            >
+              {/* ✅ Mobile Nav Items */}
+              <button onClick={handleHomeClick} className="hover:text-blue-500">
                 Home
               </button>
-              <button onClick={() => { setIsOpen(false); handleCatalogClick(); }} className="hover:text-blue-500">
+              <button onClick={() => { onScrollToCatalog(); setIsOpen(false); }} className="hover:text-blue-500">
                 Catalog
               </button>
 
               {user && (
                 <>
-                  <button onClick={() => setIsProfileOpen(true)} className="hover:text-blue-500">Profile</button>
-                  <button onClick={() => setIsOrdersOpen(true)} className="hover:text-blue-500">Orders</button>
-                  <button onClick={() => { setIsOpen(false); handleContactClick(); }} className="hover:text-blue-500">
+                  <button onClick={() => { setIsProfileOpen(true); setIsOpen(false); }} className="hover:text-blue-500">
+                    Profile
+                  </button>
+                  <button onClick={() => { setIsOrdersOpen(true); setIsOpen(false); }} className="hover:text-blue-500">
+                    Orders
+                  </button>
+                  <button onClick={() => { onScrollToContact(); setIsOpen(false); }} className="hover:text-blue-500">
                     Contact
                   </button>
                   <button onClick={logout} className="bg-red-500 text-white py-2 px-4 rounded">
@@ -135,7 +166,7 @@ const Navbar = ({ onScrollToCatalog, onScrollToHero, onScrollToContact }) => {
                   </button>
                 </>
               )}
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
