@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+#root {
+  margin: 0 auto;
+  text-align: center;
+  background-color: #f4f4f1; /* Ivory background */
+  color: #2e8b57; /* Forest green text */
+}
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Defining forest colors */
+  --forest-green: #228b22; /* Forest green */
+  --ivory: #f4f4f1; /* Ivory */
+  --dark-brown: #3e2723; /* Dark brown for tree-like elements */
+}
+
+body {
+  background-color: var(--ivory);
+  color: var(--forest-green);
+}
+
+.sectionSpacing {
+  margin-left: 20px;
+  margin-right: 20px;
+  border-color: var(--forest-green);
+  border-bottom-width: 2px;
+  width: fiontent;
+  padding-bottom: 6px;
+}
+
+h1 {
+  color: #ffffff;
+  font-size: xx-large;
+}
+
+h2, h3, h4, h5, h6 {
+  color: var(--forest-green); /* Forest green headings */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Subtle shadow for tree-like feel */
+}
+
+a {
+  color: var(--forest-green);
+  text-decoration: none;
+}
+
+a:hover {
+  color: #004d00; /* Darker shade for hover effect */
+}
+
+button {
+  background-color: var(--forest-green); /* Green buttons */
+  color: var(--ivory); /* Ivory text on buttons */
+  border: 2px solid var(--dark-brown); /* Brown border for earthy effect */
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #004d00; /* Darker green on hover */
+}
+
+footer {
+  background-color: var(--dark-brown); /* Dark brown footer */
+  color: var(--ivory); /* Ivory text in footer */
+  padding: 20px;
+}
