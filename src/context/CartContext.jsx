@@ -1,21 +1,30 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { db } from "../utils/firebaseConfig";
-import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, onSnapshot } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
-import { updateStockAfterPurchase, updateStockAfterRemoval } from "../utils/firebaseGroceryService"; 
+import {
+  updateStockAfterPurchase,
+  updateStockAfterRemoval,
+} from "../utils/firebaseGroceryService";
 
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const { user, isLoading } = useAuth();
   const [cartItems, setCartItems] = useState([]);
+  const [cartUpdated, setCartUpdated] = useState(false); // Used to notify Catalog of stock change
   const cartKey = user ? `carts/${user.uid}` : null;
 
-  // ✅ Live Firestore Cart Sync
+  // 🔁 Toggle to trigger Catalog refresh
+  const triggerCatalogRefresh = () => {
+    setCartUpdated((prev) => !prev);
+  };
+
+  // 🔁 Real-time Firestore cart sync
   useEffect(() => {
     if (!cartKey || isLoading) return;
-
     const cartRef = doc(db, cartKey);
+
     const unsubscribe = onSnapshot(cartRef, (snapshot) => {
       if (snapshot.exists()) {
         setCartItems(snapshot.data().items || []);
@@ -27,76 +36,129 @@ export const CartProvider = ({ children }) => {
     return () => unsubscribe();
   }, [cartKey, isLoading]);
 
-  // ✅ Update Firestore with new cart state
+  // 📦 Sync updated cart to Firestore
   const updateCartInFirestore = async (updatedCart) => {
     if (!cartKey) return;
     const cartRef = doc(db, cartKey);
-    await setDoc(cartRef, { items: updatedCart }, { merge: true });
+
+    const enhancedCart = updatedCart.map((item) => ({
+      ...item,
+      status: "in_cart",
+      addedAt: item.addedAt || new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+    }));
+
+    await setDoc(
+      cartRef,
+      {
+        items: enhancedCart,
+        userId: user.uid,
+        lastUpdated: new Date().toISOString(),
+      },
+      { merge: true }
+    );
   };
 
-  // ✅ Add item to cart & update stock in Firestore
+  // 🔒 Only allow admin to modify stock count in Firestore
+  const maybeUpdateStock = async (fn, ...args) => {
+    try {
+      if (args[0]) {
+        await fn(...args);
+      } else {
+        console.warn("⚠️ Stock update skipped: missing itemId or quantity.");
+      }
+    } catch (err) {
+      console.error("❌ Stock update failed:", err.message);
+    }
+  };  
+
   const addToCart = async (item) => {
     if (!cartKey) return;
-
-    // Reduce stock in the backend
-    await updateStockAfterPurchase(item.id, item.quantity);
+    await maybeUpdateStock(updateStockAfterPurchase, item.id, item.quantity);
 
     const existingItem = cartItems.find((i) => i.id === item.id);
-    let updatedCart;
-
-    if (existingItem) {
-      updatedCart = cartItems.map((i) =>
-        i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
-      );
-    } else {
-      updatedCart = [...cartItems, { ...item }];
-    }
+    const updatedCart = existingItem
+      ? cartItems.map((i) =>
+          i.id === item.id
+            ? {
+                ...i,
+                quantity: i.quantity + item.quantity,
+                lastUpdated: new Date().toISOString(),
+              }
+            : i
+        )
+      : [
+          ...cartItems,
+          {
+            ...item,
+            addedAt: new Date().toISOString(),
+            lastUpdated: new Date().toISOString(),
+            status: "in_cart",
+          },
+        ];
 
     setCartItems(updatedCart);
     await updateCartInFirestore(updatedCart);
+    triggerCatalogRefresh();
   };
 
-  // ✅ Remove item from cart & update stock back
   const removeFromCart = async (id) => {
     if (!cartKey) return;
-
     const itemToRemove = cartItems.find((item) => item.id === id);
-    if (itemToRemove) {
-      await updateStockAfterRemoval(id, itemToRemove.quantity); // Restore stock
-    }
+    await maybeUpdateStock(updateStockAfterRemoval, id, itemToRemove?.quantity || 0);
 
-    const updatedCart = cartItems.filter((item) => item.id !== id);
+    const updatedCart = cartItems
+      .filter((item) => item.id !== id)
+      .map((item) => ({ ...item, lastUpdated: new Date().toISOString() }));
+
     setCartItems(updatedCart);
     await updateCartInFirestore(updatedCart);
+    triggerCatalogRefresh();
   };
 
-  // ✅ Decrease quantity & update stock
   const decreaseQuantity = async (id) => {
     if (!cartKey) return;
+    const updatedCart = cartItems
+      .map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              quantity: item.quantity - 1,
+              lastUpdated: new Date().toISOString(),
+            }
+          : item
+      )
+      .filter((item) => item.quantity > 0);
 
-    const updatedCart = cartItems.map((item) =>
-      item.id === id ? { ...item, quantity: item.quantity - 1 } : item
-    ).filter((item) => item.quantity > 0);
-
-    await updateStockAfterRemoval(id, 1); // Increase stock by 1
+    await maybeUpdateStock(updateStockAfterRemoval, id, 1);
     setCartItems(updatedCart);
     await updateCartInFirestore(updatedCart);
+    triggerCatalogRefresh();
   };
 
-  // ✅ Clear entire cart & restore stock
   const clearCart = async () => {
     if (!cartKey) return;
 
     for (let item of cartItems) {
-      await updateStockAfterRemoval(item.id, item.quantity);
+      await maybeUpdateStock(updateStockAfterRemoval, item.id, item.quantity);
     }
 
     setCartItems([]);
     await updateCartInFirestore([]);
+    triggerCatalogRefresh();
   };
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, decreaseQuantity, clearCart }}>
+    <CartContext.Provider
+      value={{
+        cartItems,
+        addToCart,
+        removeFromCart,
+        decreaseQuantity,
+        clearCart,
+        cartUpdated,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

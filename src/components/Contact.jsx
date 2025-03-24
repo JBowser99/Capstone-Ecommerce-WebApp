@@ -36,6 +36,9 @@ const Contact = () => {
 
   return (
     <div className="container mx-auto">
+       <div className="sectionSpacing">
+          <h2 className="text-3xl font-semibold text-center mt-6 mx-2">Contact Us</h2>
+        </div>
       <p className="text-center py-2">We’d love to hear from you! Send us a message below.</p>
       <div className="max-w-lg mx-auto bg-white shadow-lg rounded-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-4">

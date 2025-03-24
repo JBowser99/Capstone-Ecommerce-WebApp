@@ -63,6 +63,17 @@ const Navbar = ({ onScrollToCatalog, onScrollToHero, onScrollToContact }) => {
 
   if (location.pathname === "/auth/Login" || location.pathname === "/auth/Signup") return null;
 
+  // ✅ Improved logout handler
+const handleLogout = async () => {
+  try {
+    await logout();
+    console.log("👋 User successfully logged out from Navbar");
+    navigate("/auth/Login"); // Optional: force navigation just in case
+  } catch (error) {
+    console.error("❌ Navbar logout failed:", error);
+  }
+};
+
   return (
     <nav className="fixed top-0 left-0 w-full bg-[#58bf5b] shadow-md z-50">
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
@@ -83,7 +94,7 @@ const Navbar = ({ onScrollToCatalog, onScrollToHero, onScrollToContact }) => {
               <button onClick={() => setIsProfileOpen(true)} className="hover:text-blue-500">Profile</button>
               <button onClick={() => setIsOrdersOpen(true)} className="hover:text-blue-500">Orders</button>
               <button onClick={onScrollToContact} className="hover:text-blue-500">Contact</button>
-              <button onClick={logout} className="bg-red-500 text-white py-2 px-4 rounded">Logout</button>
+              <button onClick={handleLogout} className="bg-red-500 text-white py-2 px-4 rounded">Logout</button>
             </>
           )}
 
@@ -161,7 +172,7 @@ const Navbar = ({ onScrollToCatalog, onScrollToHero, onScrollToContact }) => {
                   <button onClick={() => { onScrollToContact(); setIsOpen(false); }} className="hover:text-blue-500">
                     Contact
                   </button>
-                  <button onClick={logout} className="bg-red-500 text-white py-2 px-4 rounded">
+                  <button onClick={handleLogout} className="bg-red-500 text-white py-2 px-4 rounded">
                     Logout
                   </button>
                 </>

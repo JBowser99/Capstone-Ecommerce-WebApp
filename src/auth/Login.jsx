@@ -1,23 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../utils/firebaseConfig";
-import { useNavigate, Link } from "react-router-dom"; // ✅ Import Link
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import LoadingScreen from "../components/LoadingScreen";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // ✅ Correct navigation setup
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate("/redirect", { replace: true });
+    }
+  }, [user, isLoading, navigate]);  
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/"); // ✅ Redirect to home after successful login
-    } catch (error) {
-      setError(error.message);
+    } catch (err) {
+      console.error("❌ Login error:", err);
+      setError("Invalid email or password.");
     }
   };
+
+  if (isLoading) return <LoadingScreen />;
 
   return (
     <div className="h-screen flex items-center justify-center bg-gray-100">
@@ -39,15 +51,11 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button className="w-full bg-blue-500 text-white p-2 rounded">
-            Login
-          </button>
+          <button className="w-full bg-blue-500 text-white p-2 rounded">Login</button>
         </form>
-
-        {/* ✅ Fixed Sign-Up Link */}
         <div className="mt-4 text-center">
           <p>
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link to="/auth/Signup" className="text-blue-500 hover:underline">
               Sign Up
             </Link>

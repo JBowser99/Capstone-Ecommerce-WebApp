@@ -1,7 +1,8 @@
+// ✅ AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const AuthContext = createContext(null);
 
@@ -9,48 +10,51 @@ export const AuthProvider = ({ children }) => {
   const auth = getAuth();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [redirectToLogin, setRedirectToLogin] = useState(false); // ✅ Redirect state
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
-      if (authUser) {
-        setUser(authUser);
-        sessionStorage.setItem("userSession", JSON.stringify(authUser));
-      } else {
-        sessionStorage.clear();
+      if (!authUser) {
         setUser(null);
-        setRedirectToLogin(true); // ✅ Trigger safe redirect instead of direct navigation
+        setIsLoading(false);
+        return;
       }
-      setIsLoading(false);
+
+      try {
+        const idTokenResult = await authUser.getIdTokenResult(true); // force refresh to get latest claims
+        const userDoc = await getDoc(doc(db, "users", authUser.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const isAdmin = idTokenResult.claims.admin === true || userData.isAdmin === true;
+
+        setUser({ ...authUser, isAdmin });
+      } catch (error) {
+        console.error("❌ AuthContext error:", error);
+        setUser({ ...authUser, isAdmin: false });
+      } finally {
+        setIsLoading(false);
+      }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // ✅ Logout function
   const logout = async () => {
     try {
       await signOut(auth);
-      sessionStorage.clear();
       setUser(null);
-      setRedirectToLogin(true); // ✅ Trigger redirect safely
     } catch (error) {
-      console.error("❌ Error logging out:", error);
+      console.error("❌ Logout failed:", error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, logout, isLoading, redirectToLogin }}>
-      {!isLoading && children}
+    <AuthContext.Provider value={{ user, logout, isLoading }}>
+      {children}
     </AuthContext.Provider>
   );
 };
 
-// ✅ Ensure useAuth works only inside a provider
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 };
