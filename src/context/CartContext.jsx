@@ -157,6 +157,8 @@ export const CartProvider = ({ children }) => {
         decreaseQuantity,
         clearCart,
         cartUpdated,
+        setCartItems, // ✅ Expose manually
+        updateCartInFirestore // ✅ Expose manually
       }}
     >
       {children}

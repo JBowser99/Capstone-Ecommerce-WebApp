@@ -1,47 +1,84 @@
+import { useEffect, useState } from "react";
 import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { Navigate } from "react-router-dom";
-import Checkout from "./Checkout";
+import CheckoutModal from "./CheckoutModal";
+import { getDoc, doc } from "firebase/firestore";
+import { db } from "../utils/firebaseConfig";
 
 const CartModal = ({ open, onClose }) => {
   const { user } = useAuth();
   const { cartItems, removeFromCart, decreaseQuantity, clearCart } = useCart();
+  const [liveCartItems, setLiveCartItems] = useState([]);
+  const [loadingStock, setLoadingStock] = useState(false);
+  //Checkout Button variables to show/hide custom CheckoutModal.jsx component.
+  const [showCheckout, setShowCheckout] = useState(false);
 
+  // ✅ Always call hooks first
+
+  //useEffect to sync stock when cartItems change or cart modal opens
+  useEffect(() => {
+    const fetchLatestStock = async () => {
+      if (!cartItems || cartItems.length === 0) {
+        setLiveCartItems([]);
+        return;
+      }
+
+      setLoadingStock(true);
+      const updated = await Promise.all(
+        cartItems.map(async (item) => {
+          const itemRef = doc(db, "foodItems", item.id);
+          const snapshot = await getDoc(itemRef);
+          const latestStock = snapshot.exists() ? snapshot.data().stock : item.stock;
+          return {
+            ...item,
+            stock: latestStock,
+          };
+        })
+      );
+      setLiveCartItems(updated);
+      setLoadingStock(false);
+    };
+
+    if (open) fetchLatestStock();
+  }, [cartItems, open]);
+
+  // ✅ Early return AFTER all hooks
   if (!open) return null;
-
   if (!user) return <Navigate to="/auth/Login" replace />;
 
-  const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const totalPrice = liveCartItems.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
 
   return (
-    <div onClick={onClose} className="fixed inset-0 bg-black/50 flex justify-center items-center">
+    <div onClick={onClose} className="fixed inset-0 bg-black/50 flex justify-center items-center z-40">
       <div
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-lg w-full max-w-lg flex flex-col p-6 relative shadow-lg"
       >
-        {/* Close Button */}
         <div className="absolute top-5 right-5">
           <p onClick={onClose} className="cursor-pointer font-bold text-xl">✕</p>
         </div>
 
-        {/* Cart Header */}
         <div className="text-center mb-4">
           <h1 className="text-2xl font-semibold">Your Cart</h1>
         </div>
 
-        {/* Cart Items */}
         {cartItems.length === 0 ? (
           <p className="text-center text-gray-600 mt-4">Your cart is empty.</p>
+        ) : loadingStock ? (
+          <p className="text-center text-gray-500 mt-4">Loading latest stock...</p>
         ) : (
           <div className="max-h-80 overflow-y-auto">
             <ul className="space-y-3">
-              {cartItems.map((item) => (
+              {liveCartItems.map((item) => (
                 <li
                   key={item.id}
                   className="flex items-center justify-between bg-gray-100 p-3 rounded-lg shadow-sm"
                 >
-                  {/* Image & Product Info */}
                   <div className="flex items-center gap-3 flex-1">
                     <img
                       src={item.image || "/placeholder.jpg"}
@@ -54,8 +91,6 @@ const CartModal = ({ open, onClose }) => {
                       <p className="text-xs text-gray-500">Stock: {item.stock} left</p>
                     </div>
                   </div>
-
-                  {/* Quantity & Remove Buttons */}
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => decreaseQuantity(item.id)}
@@ -78,15 +113,13 @@ const CartModal = ({ open, onClose }) => {
           </div>
         )}
 
-        {/* Total Price */}
-        {cartItems.length > 0 && (
+        {cartItems.length > 0 && !loadingStock && (
           <div className="text-center mt-6">
             <p className="text-lg font-semibold">Total: ${totalPrice.toFixed(2)}</p>
           </div>
         )}
 
-        {/* Checkout & Clear Cart Buttons */}
-        {cartItems.length > 0 && (
+        {cartItems.length > 0 && !loadingStock && (
           <div className="flex justify-center mt-4 space-x-4">
             <button
               onClick={clearCart}
@@ -94,8 +127,21 @@ const CartModal = ({ open, onClose }) => {
             >
               Clear Cart
             </button>
-            <Checkout total={totalPrice} />
+            <button
+              onClick={() => setShowCheckout(true)}
+              className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded"
+            >
+              Proceed to Checkout
+            </button>
           </div>
+        )}
+
+        {showCheckout && (
+          <CheckoutModal
+            open={showCheckout}
+            onClose={() => setShowCheckout(false)}
+            total={totalPrice}
+          />
         )}
       </div>
     </div>
