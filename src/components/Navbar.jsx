@@ -9,20 +9,21 @@ import OrderModal from "./OrderModal";
 
 const Navbar = ({ onScrollToCatalog, onScrollToHero, onScrollToContact }) => {
   const { user, logout } = useAuth();
-  const { cartItems } = useCart();
+  const cart = useCart(); // ✅ Defensive access to cart context
+  const cartItems = cart?.cartItems || []; // Fallback to empty array if undefined
+
   const [isOpen, setIsOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isOrdersOpen, setIsOrdersOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-
   const mobileMenuRef = useRef(null);
 
-  // ✅ Ensure Navbar menu is closed on page load
+  // ✅ Auto-close mobile menu on mount
   useEffect(() => {
     setIsOpen(false);
-  }, []); // Runs only once on mount
+  }, []);
 
   // ✅ Close mobile menu when clicking outside
   useEffect(() => {
@@ -39,48 +40,45 @@ const Navbar = ({ onScrollToCatalog, onScrollToHero, onScrollToContact }) => {
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
 
-  // ✅ Scroll to top function
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ✅ Home button handler (ensures scroll to top)
   const handleHomeClick = () => {
-    setIsOpen(false); // Close mobile menu
+    setIsOpen(false);
     if (location.pathname !== "/") {
       navigate("/");
-      setTimeout(scrollToTop, 100); // Small delay to ensure navigation completes before scrolling
+      setTimeout(scrollToTop, 100);
     } else {
-      scrollToTop(); // If already on "/", just scroll up
+      scrollToTop();
     }
   };
 
+  // ✅ Hide navbar on auth routes
   if (location.pathname === "/auth/Login" || location.pathname === "/auth/Signup") return null;
 
-  // ✅ Improved logout handler
-const handleLogout = async () => {
-  try {
-    await logout();
-    console.log("👋 User successfully logged out from Navbar");
-    navigate("/auth/Login"); // Optional: force navigation just in case
-  } catch (error) {
-    console.error("❌ Navbar logout failed:", error);
-  }
-};
+  const handleLogout = async () => {
+    try {
+      await logout();
+      console.log("👋 User successfully logged out from Navbar");
+      navigate("/auth/Login");
+    } catch (error) {
+      console.error("❌ Navbar logout failed:", error);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 w-full bg-[#58bf5b] shadow-md z-50">
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
         
-        {/* ✅ Left Section: Logo */}
+        {/* ✅ Logo */}
         <div className="flex items-center cursor-pointer" onClick={handleHomeClick}>
-          <img src="/TreeLogo.webp" alt="E-Shop Logo" className="w-14 h-14 mr-2"/> 
+          <img src="/TreeLogo.webp" alt="E-Shop Logo" className="w-14 h-14 mr-2" /> 
           <span className="text-2xl font-bold uppercase">E-Shop</span>
         </div>
 
@@ -98,7 +96,7 @@ const handleLogout = async () => {
             </>
           )}
 
-          {/* ✅ Cart Button with Notification Badge */}
+          {/* ✅ Cart */}
           <div className="relative">
             <button onClick={() => setIsCartOpen(true)} className="bg-blue-500 text-white py-2 px-4 rounded relative">
               🛒
@@ -111,9 +109,9 @@ const handleLogout = async () => {
           </div>
         </div>
 
-        {/* ✅ Mobile Navigation */}
+        {/* ✅ Mobile Nav */}
         <div className="flex items-center md:hidden">
-          {/* ✅ Mobile Cart Button with Notification */}
+          {/* Cart Button */}
           <div className="relative mr-4">
             <button onClick={() => setIsCartOpen(true)} className="bg-blue-500 text-white py-2 px-4 rounded">
               🛒
@@ -125,7 +123,7 @@ const handleLogout = async () => {
             </button>
           </div>
 
-          {/* ✅ Mobile Menu Toggle */}
+          {/* Hamburger Menu */}
           <button className="mobile-menu-button md:hidden" onClick={() => setIsOpen(!isOpen)}>
             <motion.svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <motion.path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
@@ -138,43 +136,30 @@ const handleLogout = async () => {
       {/* ✅ Mobile Dropdown */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
+          <motion.div
             className="md:hidden absolute top-full pt-[10vh] w-full h-screen bg-slate-950/70 backdrop-blur-md shadow-md border-t flex justify-center items-start"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            {/* ✅ Transparent Clickable Background */}
+            {/* Clickaway zone */}
             <div className="absolute inset-0" onClick={() => setIsOpen(false)}></div>
 
-            {/* ✅ Mobile Menu */}
+            {/* Mobile Menu Box */}
             <motion.div
               ref={mobileMenuRef}
               className="flex flex-col items-center py-4 space-y-4 relative bg-slate-950/20 rounded-lg max-w-sm shadow-lg p-4 border"
-              onClick={(e) => e.stopPropagation()} // Prevents menu from closing when clicking inside
+              onClick={(e) => e.stopPropagation()}
             >
-              {/* ✅ Mobile Nav Items */}
-              <button onClick={handleHomeClick} className="hover:text-blue-500">
-                Home
-              </button>
-              <button onClick={() => { onScrollToCatalog(); setIsOpen(false); }} className="hover:text-blue-500">
-                Catalog
-              </button>
+              <button onClick={handleHomeClick} className="hover:text-blue-500">Home</button>
+              <button onClick={() => { onScrollToCatalog(); setIsOpen(false); }} className="hover:text-blue-500">Catalog</button>
 
               {user && (
                 <>
-                  <button onClick={() => { setIsProfileOpen(true); setIsOpen(false); }} className="hover:text-blue-500">
-                    Profile
-                  </button>
-                  <button onClick={() => { setIsOrdersOpen(true); setIsOpen(false); }} className="hover:text-blue-500">
-                    Orders
-                  </button>
-                  <button onClick={() => { onScrollToContact(); setIsOpen(false); }} className="hover:text-blue-500">
-                    Contact
-                  </button>
-                  <button onClick={handleLogout} className="bg-red-500 text-white py-2 px-4 rounded">
-                    Logout
-                  </button>
+                  <button onClick={() => { setIsProfileOpen(true); setIsOpen(false); }} className="hover:text-blue-500">Profile</button>
+                  <button onClick={() => { setIsOrdersOpen(true); setIsOpen(false); }} className="hover:text-blue-500">Orders</button>
+                  <button onClick={() => { onScrollToContact(); setIsOpen(false); }} className="hover:text-blue-500">Contact</button>
+                  <button onClick={handleLogout} className="bg-red-500 text-white py-2 px-4 rounded">Logout</button>
                 </>
               )}
             </motion.div>
@@ -182,13 +167,9 @@ const handleLogout = async () => {
         )}
       </AnimatePresence>
 
-      {/* ✅ Profile Modal */}
+      {/* ✅ Modals */}
       <ProfileModal open={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-
-      {/* ✅ Order Modal */}
       <OrderModal open={isOrdersOpen} onClose={() => setIsOrdersOpen(false)} />
-
-      {/* ✅ Cart Modal */}
       <CartModal open={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </nav>
   );

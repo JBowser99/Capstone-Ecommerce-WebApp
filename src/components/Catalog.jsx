@@ -8,6 +8,8 @@ import {
 import { db } from "../utils/firebaseConfig";
 import { useCart } from "../context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
+import ReviewSection from "./ReviewSection";
+
 
 const groceryCategories = [
   "All", "Dairy", "Bread", "Deli Meat", "Meat", "Vegetables", "Fruits",
@@ -192,6 +194,9 @@ const Catalog = () => {
                   +
                 </button>
               </div>
+              {/* Customer Reviews Section */}
+              {/* ReviewSection now pulls its own data live via itemId. No need to pass reviews anymore.*/}
+              <ReviewSection itemId={item.id} />
 
               {/* ✅ Add to Cart Button */}
               <button

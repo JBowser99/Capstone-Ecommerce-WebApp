@@ -20,6 +20,7 @@ import OrderModal from "./components/OrderModal";
 import AdminPage from "./components/AdminPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LoadingScreen from "./components/LoadingScreen";
+import ReviewPage from "./components/ReviewPage"; // ✅ Import new admin panel
 
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -137,7 +138,18 @@ const App = () => {
               </AdminLayout>
             }
           />
-
+          <Route
+            path="/admin/reviews"
+            element={
+              <AdminLayout>
+                <ProtectedRoute>
+                  <AdminRoute>
+                    <ReviewPage />
+                  </AdminRoute>
+                </ProtectedRoute>
+              </AdminLayout>
+            }
+          />
           {/* ✅ Fallback */}
           <Route path="*" element={<Navigate to="/auth/Login" replace />} />
         </Routes>

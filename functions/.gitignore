@@ -8,3 +8,11 @@ typings/
 # Node.js dependency directory
 node_modules/
 *.local
+
+# Firebase Functions: Secure Git Ignore for backend functions folder
+.env
+.env.local
+.runtimeconfig.json
+serviceAccount*.json
+*.secret.*
+keys/

@@ -1,8 +1,14 @@
+// src/components/AdminPage.jsx
+
 import { useAdminInventory } from "../context/AdminInventoryContext";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import CustomerAnalytics from "./CustomerAnalytics";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../utils/firebaseConfig";
 
+// 📦 List of categories to filter inventory
 const categories = [
   "All", "Dairy", "Bread", "Deli Meat", "Meat", "Vegetables", "Fruits",
   "Seafood", "Snacks", "Baking", "Drinks", "Frozen", "Cereal"
@@ -20,29 +26,40 @@ const AdminPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const [flaggedReviews, setFlaggedReviews] = useState([]);
 
-  // ✅ Load inventory once admin is confirmed
+  // 🔥 Real-time flagged review listener (optional summary)
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "flaggedReviews"), (snap) => {
+      setFlaggedReviews(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  // 🔁 Fetch inventory when admin is verified
   useEffect(() => {
     if (isAdmin) {
       fetchInventory();
     }
   }, [isAdmin]);
 
-// ✅ Safe logout + redirect with console log
-const handleLogout = async () => {
-  try {
-    await logout();
-    console.log("👋 Admin successfully logged out");
-    navigate("/auth/Login", { replace: true });
-  } catch (error) {
-    console.error("❌ Admin logout failed:", error);
-  }
-};
+  // 🚪 Logout with redirect to login
+  const handleLogout = async () => {
+    try {
+      await logout();
+      console.log("👋 Admin successfully logged out");
+      navigate("/auth/Login", { replace: true });
+    } catch (error) {
+      console.error("❌ Admin logout failed:", error);
+    }
+  };
 
+  // 🔎 Category filter
   const filteredItems = selectedCategory === "All"
     ? inventoryItems
     : inventoryItems.filter((item) => item.category === selectedCategory);
 
+  // 🟢 Stock-level styling
   const getStockColor = (stock) => {
     if (stock <= 5) return "bg-red-100 text-red-700 border-red-300";
     if (stock <= 9) return "bg-orange-100 text-orange-700 border-orange-300";
@@ -50,22 +67,33 @@ const handleLogout = async () => {
   };
 
   return (
-    <div className="min-h-screen p-4 bg-gray-100 relative">
+    <div className="min-h-screen max-w-7xl mx-auto px-4 bg-gray-100 relative">
+      {/* 🔘 Top Admin Buttons */}
+      <div className="absolute top-4 left-4 flex gap-2">
+        <button
+          onClick={() => navigate("/")}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow"
+        >
+          Go to Website
+        </button>
+        <button
+          onClick={() => navigate("/admin/reviews")}
+          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow"
+        >
+          ⚠️ Review Moderation
+        </button>
+      </div>
+
       <button
         onClick={handleLogout}
         className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow"
       >
         Logout
       </button>
-      <button
-        onClick={() => navigate("/")}
-        className="absolute top-4 left-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow"
-      >
-        Go to Website
-      </button>
-      
+
       <h1 className="text-3xl font-bold mb-6 text-center">📦 Admin Inventory Dashboard</h1>
 
+      {/* 📂 Category Filters */}
       <div className="flex flex-wrap justify-center gap-3 mb-8">
         {categories.map((cat, idx) => (
           <button
@@ -82,6 +110,7 @@ const handleLogout = async () => {
         ))}
       </div>
 
+      {/* 📋 Inventory Items */}
       {loading ? (
         <p className="text-center text-gray-500">Loading inventory...</p>
       ) : (

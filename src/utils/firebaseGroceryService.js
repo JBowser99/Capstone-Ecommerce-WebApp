@@ -1,17 +1,48 @@
 import { db } from "./firebaseConfig";
+import { getAuth } from "firebase/auth";
 import { 
-  collection, 
-  doc, 
-  getDocs, 
+  collection,
+  doc,
+  getDocs,
   getDoc,
-  addDoc, 
-  updateDoc, 
-  query, 
-  where 
+  addDoc,
+  updateDoc,
+  query,
+  where,
+  Timestamp,
 } from "firebase/firestore";
 
-// ✅ Firestore Reference
+// Reference to the foodItems collection
 const foodCollectionRef = collection(db, "foodItems");
+const auth = getAuth();
+
+// Sample names and comments for generating reviews
+const sampleNames = [
+  "Emma", "Liam", "Olivia", "Noah", "Ava", "William", "Sophia", "James",
+  "Isabella", "Benjamin", "Mia", "Lucas", "Charlotte", "Henry", "Amelia",
+  "Sebastian", "Harper", "Jack", "Evelyn", "Elijah"
+];
+const sampleComments = [
+  "Absolutely loved it!", "Tasted great, will buy again.", "Fresh and delicious.",
+  "Decent quality for the price.", "Better than expected!", "My go-to choice!",
+  "Would recommend to others.", "Not bad at all.", "Fantastic flavor.",
+  "A bit pricey but worth it.", "Exceeded my expectations!", "Fast delivery and tasty.",
+  "Yummy and satisfying.", "Perfect for my recipes!", "Good value overall."
+];
+
+// 🔁 Generate N random reviews
+const generateSampleReviews = (n = 4) => {
+  const currentUid = auth.currentUser?.uid || "guest-seed";
+
+  return Array.from({ length: n }).map(() => ({
+    name: sampleNames[Math.floor(Math.random() * sampleNames.length)],
+    rating: Math.floor(Math.random() * 3) + 3,
+    comment: sampleComments[Math.floor(Math.random() * sampleComments.length)],
+    uid: currentUid, // 👈 use current user UID
+    timestamp: Timestamp.now(),
+    flagged: false,
+  }));
+};
 
 // ✅ Sample Food Items (15-20 items per category)
 const sampleFoodData = [
@@ -273,64 +304,74 @@ const sampleFoodData = [
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ];
 
-// ✅ Check if database is empty before seeding
+// ✅ Update seed logic to store reviews as subcollection
+// 🌱 Seed food items and subcollection reviews
 export const seedFoodItems = async () => {
-  try {
-    const querySnapshot = await getDocs(foodCollectionRef);
-    
-    // ✅ If data already exists, do not add again
-    if (!querySnapshot.empty) {
-      console.log("⚠ Food items already exist. Skipping seed.");
-      return;
-    }
-
-    console.log("🌱 Seeding food items into Firestore...");
-    
-    // ✅ Insert sample data
-    for (let item of sampleFoodData) {
-      await addDoc(foodCollectionRef, item);
-    }
-    
-    console.log("✅ Food items seeded successfully!");
-  } catch (error) {
-    console.error("❌ Error seeding food items:", error);
+  const snapshot = await getDocs(foodCollectionRef);
+  if (!snapshot.empty) {
+    console.log("⚠️ Food items already exist. Skipping seeding.");
+    return;
   }
+
+  console.log("🌱 Seeding food items and their reviews...");
+  for (const item of sampleFoodData) {
+    try {
+      // Insert the food item
+      const { reviews, ...itemData } = item;
+      const docRef = await addDoc(foodCollectionRef, itemData);
+
+      // Inject realistic random reviews
+      const autoReviews = generateSampleReviews();
+      const reviewPromises = autoReviews.map((review) =>
+        addDoc(collection(db, "foodItems", docRef.id, "reviews"), review)
+      );
+
+      await Promise.all(reviewPromises);
+      console.log(`✅ Seeded: ${item.name}`);
+    } catch (error) {
+      console.error(`❌ Error seeding ${item.name}:`, error);
+    }
+  }
+
+  console.log("🎉 Finished seeding foodItems and review subcollections.");
 };
 
 // ✅ Fetch food items by category from Firestore
+// 🔍 Get grocery items by category
 export const getGroceryItems = async (selectedCategory) => {
   try {
-    console.log(`🔍 Fetching Firestore items for category: "${selectedCategory}"`);
+    console.log(`🔍 Fetching items for category: "${selectedCategory}"`);
 
-    let q = selectedCategory === "All"
+    const q = selectedCategory === "All"
       ? foodCollectionRef
       : query(foodCollectionRef, where("category", "==", selectedCategory));
 
-    const querySnapshot = await getDocs(q);
-    const items = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-
-    console.log("✅ Fetched items from Firestore:", items);
-    return items;
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
-    console.error("❌ Error fetching items:", error);
+    console.error("❌ Failed to fetch grocery items:", error);
     return [];
   }
 };
 
 // ✅ Function to Reduce Stock When Item is Added to Cart
+// 📉 Decrease stock after purchase
 export const updateStockAfterPurchase = async (itemId, quantity) => {
-  const itemRef = doc(db, "foodItems", itemId);
-  const itemSnap = await getDoc(itemRef);
+  try {
+    const itemRef = doc(db, "foodItems", itemId);
+    const itemSnap = await getDoc(itemRef);
 
-  if (itemSnap.exists()) {
-    const current = itemSnap.data();
-    const newStock = Math.max(0, (current.stock || 0) - quantity);
-    await updateDoc(itemRef, {
-      stock: newStock,
-      lastUpdated: new Date().toISOString(),
-    });
-
-    console.log(`📉 [${new Date().toISOString()}] Stock for '${current.name}' updated to ${newStock}`);
+    if (itemSnap.exists()) {
+      const current = itemSnap.data();
+      const newStock = Math.max(0, (current.stock || 0) - quantity);
+      await updateDoc(itemRef, {
+        stock: newStock,
+        lastUpdated: Timestamp.now(),
+      });
+      console.log(`📉 Updated stock for '${current.name}' to ${newStock}`);
+    }
+  } catch (error) {
+    console.error("❌ Error updating stock:", error);
   }
 };
 
@@ -342,27 +383,30 @@ export const updateStockAfterRemoval = async (itemId, quantityRestored) => {
 
     if (itemSnap.exists()) {
       const currentStock = itemSnap.data().stock || 0;
-      const newStock = currentStock + quantityRestored;
-
-      await updateDoc(itemRef, { stock: newStock });
-      console.log(`✅ Stock restored: ${newStock} available for ${itemId}`);
+      await updateDoc(itemRef, { stock: currentStock + quantityRestored });
+      console.log(`✅ Restored stock for ${itemId}: ${currentStock + quantityRestored}`);
     }
   } catch (error) {
-    console.error("❌ Error updating stock after removal:", error);
+    console.error("❌ Error restoring stock:", error);
   }
 };
 
 // Get all cart quantities for each Food item
 export const getCartQuantitiesByItemId = async () => {
-  const cartsSnapshot = await getDocs(collection(db, "carts"));
-  const itemQuantities = {};
+  try {
+    const cartsSnapshot = await getDocs(collection(db, "carts"));
+    const itemQuantities = {};
 
-  cartsSnapshot.forEach((doc) => {
-    const items = doc.data().items || [];
-    items.forEach(({ id, quantity }) => {
-      itemQuantities[id] = (itemQuantities[id] || 0) + quantity;
+    cartsSnapshot.forEach((doc) => {
+      const items = doc.data().items || [];
+      items.forEach(({ id, quantity }) => {
+        itemQuantities[id] = (itemQuantities[id] || 0) + quantity;
+      });
     });
-  });
 
-  return itemQuantities; // { itemId: totalQuantityInCarts }
+    return itemQuantities;
+  } catch (error) {
+    console.error("❌ Error getting cart quantities:", error);
+    return {};
+  }
 };
