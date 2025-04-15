@@ -13,7 +13,7 @@ const Signup = () => {
     e.preventDefault();
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      navigate("/"); // ✅ Redirect to home after signup
+      navigate("/"); // ✅ Redirect after successful signup
     } catch (error) {
       setError(error.message);
     }
@@ -24,27 +24,49 @@ const Signup = () => {
       <div className="p-6 bg-white rounded-lg shadow-md w-96">
         <h2 className="text-2xl font-semibold text-center mb-4">Sign Up</h2>
         {error && <p className="text-red-500 text-center">{error}</p>}
+        
         <form onSubmit={handleSignup} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full p-2 border rounded"
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full p-2 border rounded"
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button className="w-full bg-blue-500 text-white p-2 rounded">
+
+          {/* ✅ Email Field */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+
+          {/* ✅ Password Field */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+
+          <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded">
             Sign Up
           </button>
         </form>
 
-        {/* ✅ Fixed Login Link */}
+        {/* ✅ Link to Login */}
         <div className="mt-4 text-center">
           <p>
             Already have an account?{" "}

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
+import { getAuth, deleteUser, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { useAuth } from "../context/AuthContext";
 import { AnimatePresence, motion } from "framer-motion"; // 🔄 For safe animation and mount/unmount
+import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
 
 const ProfileModal = ({ open, onClose }) => {
   const { user } = useAuth(); // 👤 Get current user from AuthContext
@@ -59,21 +60,47 @@ const ProfileModal = ({ open, onClose }) => {
     }
   };
 
-  // 🗑️ Delete user profile from Firestore
-  const handleDeleteAccount = async () => {
-    if (!user) return;
-
-    const confirmDelete = window.confirm("Are you sure you want to delete your account?");
-    if (!confirmDelete) return;
-
-    try {
-      await deleteDoc(doc(db, "users", user.uid));
-      setMessage("Your account has been deleted.");
-    } catch (error) {
-      console.error("❌ Error deleting account:", error);
-      setMessage("Failed to delete account. Try again.");
-    }
-  };
+    // 🗑️ Delete user profile from Firestore
+    const handleDeleteAccount = async () => {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+    
+      if (!currentUser) return;
+    
+      const confirmDelete = window.confirm("Are you sure you want to permanently delete your account?");
+      if (!confirmDelete) return;
+    
+      try {
+        // 🔁 Prompt user for password to reauthenticate
+        const password = prompt("Please enter your password to confirm:");
+    
+        if (!password) {
+          alert("❌ Password is required to delete your account.");
+          return;
+        }
+    
+        const credential = EmailAuthProvider.credential(currentUser.email, password);
+        await reauthenticateWithCredential(currentUser, credential);
+    
+        // ✅ Delete user's data from Firestore
+        await deleteDoc(doc(db, "users", currentUser.uid));
+        await deleteDoc(doc(db, "carts", currentUser.uid));
+    
+        const ordersRef = collection(db, "orders");
+        const q = query(ordersRef, where("userId", "==", currentUser.uid));
+        const snapshot = await getDocs(q);
+        await Promise.all(snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref)));
+    
+        // ✅ Delete Auth account
+        await deleteUser(currentUser);
+    
+        // ✅ Logout & redirect
+        window.location.href = "/auth/Login";
+      } catch (error) {
+        console.error("❌ Error deleting account:", error);
+        alert(error.message || "Failed to delete account.");
+      }
+    };
 
   // ✅ Framer Motion + AnimatePresence handles safe rendering + transitions
   return (

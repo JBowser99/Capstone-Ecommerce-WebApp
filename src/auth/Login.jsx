@@ -16,7 +16,7 @@ const Login = () => {
     if (!isLoading && user) {
       navigate("/redirect", { replace: true });
     }
-  }, [user, isLoading, navigate]);  
+  }, [user, isLoading, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -37,22 +37,44 @@ const Login = () => {
         <h2 className="text-2xl font-semibold text-center mb-4">Welcome</h2>
         {error && <p className="text-red-500 text-center">{error}</p>}
         <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full p-2 border rounded"
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full p-2 border rounded"
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+
+          {/* ✅ Email Field */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+
+          {/* ✅ Password Field */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+
           <button className="w-full bg-blue-500 text-white p-2 rounded">Login</button>
         </form>
+
         <div className="mt-4 text-center">
           <p>
             Don&apos;t have an account?{" "}

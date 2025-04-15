@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, initializeFirestore, memoryLocalCache, persistentLocalCache } from "firebase/firestore";
+import { setLogLevel } from "firebase/firestore";
 
 //Firebase Configuration
 // ✅ Correctly use `import.meta.env`
@@ -13,6 +14,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
+
+setLogLevel("error"); // Only show critical errors, not debug warnings
 
 // ✅ Initialize Firebase App
 const app = initializeApp(firebaseConfig);

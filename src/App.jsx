@@ -21,6 +21,7 @@ import AdminPage from "./components/AdminPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LoadingScreen from "./components/LoadingScreen";
 import ReviewPage from "./components/ReviewPage"; // ✅ Import new admin panel
+import ReviewOrdersPage from "./components/ReviewOrdersPage"; // ✅ Import the page
 
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -88,6 +89,7 @@ const App = () => {
           <Route path="/redirect" element={<RedirectHandler />} />
 
           {/* ✅ Regular User Routes */}
+           {/*Home.jsx*/}
           <Route
             path="/"
             element={
@@ -106,6 +108,7 @@ const App = () => {
               </PublicLayout>
             }
           />
+          {/*ProfileModal.jsx*/}
           <Route
             path="/profilemodal"
             element={
@@ -114,6 +117,7 @@ const App = () => {
               </PublicLayout>
             }
           />
+          {/*OrderModal.jsx*/}
           <Route
             path="/ordermodal"
             element={
@@ -122,8 +126,8 @@ const App = () => {
               </PublicLayout>
             }
           />
-
-          {/* ✅ Admin Routes */}
+          {/*Admin Users Routes */}
+          {/*AdminPage.jsx*/}
           <Route
             path="/admin"
             element={
@@ -138,6 +142,7 @@ const App = () => {
               </AdminLayout>
             }
           />
+          {/*ReviewPage.jsx*/}
           <Route
             path="/admin/reviews"
             element={
@@ -150,6 +155,20 @@ const App = () => {
               </AdminLayout>
             }
           />
+          {/*ReviewOrdersPage.tsx (admin panel for pickups)*/}
+          <Route
+  path="/admin/review-orders"
+  element={
+    <AdminLayout>
+      <ProtectedRoute>
+        <AdminRoute>
+          <ReviewOrdersPage />
+        </AdminRoute>
+      </ProtectedRoute>
+    </AdminLayout>
+  }
+/>
+
           {/* ✅ Fallback */}
           <Route path="*" element={<Navigate to="/auth/Login" replace />} />
         </Routes>

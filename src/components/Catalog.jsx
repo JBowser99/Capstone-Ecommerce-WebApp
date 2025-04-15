@@ -10,18 +10,19 @@ import { useCart } from "../context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ReviewSection from "./ReviewSection";
 
-
+// 🗂️ Grocery category list
 const groceryCategories = [
   "All", "Dairy", "Bread", "Deli Meat", "Meat", "Vegetables", "Fruits",
   "Seafood", "Snacks", "Baking", "Drinks", "Frozen", "Cereal"
 ];
 const dairySubcategories = ["All Dairy", "Milk", "Eggs", "Butter", "Cheese", "Yogurt"];
+
 const ITEMS_PER_PAGE = 20;
 const ITEMS_PER_PAGE_ALL = 12;
 
 const Catalog = () => {
   const [products, setProducts] = useState([]);
-  const { addToCart, cartUpdated } = useCart(); // ✅ Syncs with CartContext
+  const { addToCart, cartUpdated } = useCart();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedSubcategory, setSelectedSubcategory] = useState("All Dairy");
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,7 +30,7 @@ const Catalog = () => {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
 
-  // ✅ Firestore real-time stock listener
+  // 🔁 Real-time Firestore listener for grocery items
   useEffect(() => {
     let q;
     if (selectedCategory === "All") {
@@ -52,7 +53,7 @@ const Catalog = () => {
     return () => unsubscribe();
   }, [selectedCategory, cartUpdated]);
 
-  // ✅ Filter for Dairy subcategories
+  // 🧮 Subcategory filter logic for Dairy
   const filteredProducts = selectedCategory === "Dairy"
     ? selectedSubcategory === "All Dairy"
       ? products
@@ -68,11 +69,13 @@ const Catalog = () => {
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
+  // 🧮 Handles input-boundary for quantity
   const handleQuantityChange = (id, newQty, maxStock) => {
     const safeQty = Math.max(1, Math.min(newQty, maxStock));
     setQuantity((prev) => ({ ...prev, [id]: safeQty }));
   };
 
+  // 🛒 Add item to cart with notification
   const handleAddToCart = async (item) => {
     const itemQuantity = quantity[item.id] || 1;
     await addToCart({ ...item, quantity: itemQuantity });
@@ -84,7 +87,7 @@ const Catalog = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 relative">
-      {/* ✅ Notification */}
+      {/* ✅ Top-right cart feedback */}
       <AnimatePresence>
         {showNotification && (
           <motion.div
@@ -92,13 +95,14 @@ const Catalog = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-md z-50"
+            aria-live="polite"
           >
             {notificationMessage}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ✅ Category Buttons */}
+      {/* 🧭 Category buttons */}
       <div className="my-6 flex justify-center flex-wrap gap-2">
         {groceryCategories.map((cat, idx) => (
           <button
@@ -119,7 +123,7 @@ const Catalog = () => {
         ))}
       </div>
 
-      {/* ✅ Dairy Subcategories */}
+      {/* 🧀 Dairy subcategory buttons */}
       {selectedCategory === "Dairy" && (
         <div className="border-t-2 py-6 mb-6 flex justify-center flex-wrap gap-2">
           {dairySubcategories.map((sub, idx) => (
@@ -141,7 +145,7 @@ const Catalog = () => {
         </div>
       )}
 
-      {/* ✅ Product Grid */}
+      {/* 🛍️ Product cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {paginatedProducts.length === 0 ? (
           <p className="text-center text-gray-600">No items found in this category.</p>
@@ -163,42 +167,53 @@ const Catalog = () => {
                 Category: {item.category} - {item.subcategory}
               </p>
 
-              {/* ✅ Quantity Selector */}
+              {/* 🔢 Quantity input with proper label & accessibility */}
               <div className="flex justify-center items-center space-x-2 mt-2">
-                <button
-                  className="bg-gray-300 px-3 py-1 rounded hover:bg-gray-400"
-                  onClick={() =>
-                    handleQuantityChange(item.id, (quantity[item.id] || 1) - 1, item.stock)
-                  }
-                  disabled={(quantity[item.id] || 1) <= 1}
-                >
+              <button
+    className="bg-gray-300 px-3 py-1 rounded hover:bg-gray-400"
+    onClick={() =>
+      handleQuantityChange(item.id, (quantity[item.id] || 1) - 1, item.stock)
+    }
+    disabled={(quantity[item.id] || 1) <= 1}
+    aria-label={`Decrease quantity for ${item.name}`}
+  >
                   −
                 </button>
-                <input
-                  type="number"
-                  value={quantity[item.id] || 1}
-                  onChange={(e) =>
-                    handleQuantityChange(item.id, parseInt(e.target.value) || 1, item.stock)
-                  }
-                  className="w-12 text-center border rounded"
-                  min="1"
-                  max={item.stock}
-                />
-                <button
-                  className="bg-gray-300 px-3 py-1 rounded hover:bg-gray-400"
-                  onClick={() =>
-                    handleQuantityChange(item.id, (quantity[item.id] || 1) + 1, item.stock)
-                  }
-                  disabled={(quantity[item.id] || 1) >= item.stock}
-                >
-                  +
-                </button>
+
+                 {/* ✅ Full accessibility + autofill fix */}
+  <label htmlFor={`qty-${item.id}`} className="sr-only">
+    Quantity for {item.name}
+  </label>
+  <input
+    id={`qty-${item.id}`}
+    name={`qty-${item.id}`}
+    type="number"
+    value={quantity[item.id] || 1}
+    onChange={(e) =>
+      handleQuantityChange(item.id, parseInt(e.target.value) || 1, item.stock)
+    }
+    className="w-12 text-center border rounded"
+    min="1"
+    max={item.stock}
+    autoComplete="off" // ✅ prevents browser autofill warning
+    aria-label={`Quantity input for ${item.name}`}
+  />
+<button
+    className="bg-gray-300 px-3 py-1 rounded hover:bg-gray-400"
+    onClick={() =>
+      handleQuantityChange(item.id, (quantity[item.id] || 1) + 1, item.stock)
+    }
+    disabled={(quantity[item.id] || 1) >= item.stock}
+    aria-label={`Increase quantity for ${item.name}`}
+  >
+    +
+  </button>
               </div>
-              {/* Customer Reviews Section */}
-              {/* ReviewSection now pulls its own data live via itemId. No need to pass reviews anymore.*/}
+
+              {/* ⭐ Customer Reviews */}
               <ReviewSection itemId={item.id} />
 
-              {/* ✅ Add to Cart Button */}
+              {/* 🛒 Add to Cart */}
               <button
                 onClick={() => handleAddToCart(item)}
                 className={`mt-3 text-white py-2 px-4 rounded w-full transition ${
@@ -215,7 +230,7 @@ const Catalog = () => {
         )}
       </div>
 
-      {/* ✅ Pagination */}
+      {/* 📄 Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-6 space-x-2">
           <button

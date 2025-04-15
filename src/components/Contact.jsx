@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import emailjs from "@emailjs/browser";
 
@@ -9,40 +11,37 @@ const Contact = () => {
   });
   const [status, setStatus] = useState("");
 
-  // ✅ Handle form input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("Sending...");
 
     try {
       await emailjs.send(
-        "YOUR_SERVICE_ID",   // Replace with EmailJS Service ID
-        "YOUR_TEMPLATE_ID",  // Replace with EmailJS Template ID
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
         formData,
-        "YOUR_PUBLIC_KEY"    // Replace with your EmailJS Public Key
-      );
-      setStatus("Message Sent Successfully!");
-      setFormData({ name: "", email: "", message: "" }); // Clear form after success
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );      
+      setStatus("✅ Message sent successfully!");
+      setFormData({ name: "", email: "", message: "" });
     } catch (error) {
       console.error("EmailJS Error:", error);
-      setStatus("Failed to send message. Try again.");
+      setStatus("❌ Failed to send message. Try again.");
     }
   };
 
   return (
     <div className="container mx-auto">
-       <div className="sectionSpacing">
-          <h2 className="text-3xl font-semibold text-center mt-6 mx-2">Contact Us</h2>
-        </div>
+      <div className="sectionSpacing">
+        <h2 className="text-3xl font-semibold text-center mt-6 mx-2">Contact Us</h2>
+      </div>
       <p className="text-center py-2">We’d love to hear from you! Send us a message below.</p>
       <div className="max-w-lg mx-auto bg-white shadow-lg rounded-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* ✅ Name Input */}
           <input
             type="text"
             name="name"
@@ -53,7 +52,6 @@ const Contact = () => {
             className="w-full p-2 border border-gray-300 rounded"
           />
 
-          {/* ✅ Email Input */}
           <input
             type="email"
             name="email"
@@ -64,7 +62,6 @@ const Contact = () => {
             className="w-full p-2 border border-gray-300 rounded"
           />
 
-          {/* ✅ Message Input */}
           <textarea
             name="message"
             rows="5"
@@ -75,7 +72,6 @@ const Contact = () => {
             className="w-full p-2 border border-gray-300 rounded"
           />
 
-          {/* ✅ Submit Button */}
           <button
             type="submit"
             className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
@@ -84,8 +80,11 @@ const Contact = () => {
           </button>
         </form>
 
-        {/* ✅ Status Message */}
-        {status && <p className="mt-4 text-center text-green-600">{status}</p>}
+        {status && (
+          <p className={`mt-4 text-center ${status.includes("Failed") ? "text-red-600" : "text-green-600"}`}>
+            {status}
+          </p>
+        )}
       </div>
     </div>
   );

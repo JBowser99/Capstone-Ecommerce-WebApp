@@ -8,6 +8,7 @@ import { submitOrder } from "../utils/firebaseOrderService";
 const CheckoutModal = ({ open, onClose, total }) => {
   const { user } = useAuth();
   const { cartItems, updateCartInFirestore, setCartItems } = useCart();
+
   const [logistics, setLogistics] = useState({});
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -19,13 +20,28 @@ const CheckoutModal = ({ open, onClose, total }) => {
   if (!open) return null;
   if (!user) return <Navigate to="/auth/Login" replace />;
 
-  const handleSubmitOrder = async () => {
-    setIsSubmitting(true);
-    const maskedBilling = "xxxx xxxx xxxx xxxx";
+  const finalTotal = total + (logistics?.fee || 0);
 
+  const handleSubmitOrder = async () => {
+    if (!name.trim() || !address.trim() || !email.trim()) {
+      alert("Please fill out all required fields.");
+      return;
+    }
+
+    if (
+      logistics.deliveryMethod === "pickup" &&
+      (!logistics.pickupTime || logistics.pickupTime === "Choose Time")
+    ) {
+      alert("Please select a valid pickup date and time.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const maskedBilling = "xxxx xxxx xxxx xxxx";
     const orderData = {
       items: cartItems,
-      total,
+      total: finalTotal,
       name,
       address,
       email,
@@ -35,21 +51,19 @@ const CheckoutModal = ({ open, onClose, total }) => {
 
     try {
       await submitOrder(user.uid, orderData);
-
-      console.log("✅ Order placed successfully!");
-      setShowSuccess(true);
       await updateCartInFirestore([]);
       setCartItems([]);
+      setShowSuccess(true);
 
       setTimeout(() => {
         setShowSuccess(false);
         setIsSubmitting(false);
         onClose();
-        alert("🎉 Thank you! Your order has been placed successfully.");
+        alert("🎉 Order placed! You can view it in your Order History.");
       }, 1500);
     } catch (err) {
-      console.error("❌ Failed to place order:", err.message);
-      alert("❌ Something went wrong. Please try again.");
+      console.error("❌ Error placing order:", err.message);
+      alert("❌ Something went wrong.");
       setIsSubmitting(false);
     }
   };
@@ -60,60 +74,91 @@ const CheckoutModal = ({ open, onClose, total }) => {
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-lg w-full max-w-2xl p-6 shadow-lg relative overflow-y-auto max-h-[90vh]"
       >
-        {/* Close Button */}
+        {/* ❌ Close Button */}
         <div className="absolute top-5 right-5">
           <p onClick={onClose} className="cursor-pointer font-bold text-xl">✕</p>
         </div>
 
         <h2 className="text-2xl font-semibold mb-4 text-center">Checkout</h2>
 
-        {/* Success Alert */}
+        {/* ✅ Confirmation */}
         {showSuccess && (
           <div className="bg-green-500 text-white px-4 py-2 rounded mb-4 text-center shadow">
             ✅ Thank you for shopping with us!
           </div>
         )}
 
-        {/* User Info */}
+        {/* ✅ User Info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <input
-            type="text"
-            placeholder="Full Name"
-            className="p-2 border rounded"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Address"
-            className="p-2 border rounded"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            className="p-2 border rounded col-span-2"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          <div>
+            <label htmlFor="checkout-name" className="block text-sm font-medium text-gray-700">
+              Full Name
+            </label>
+            <input
+              id="checkout-name"
+              name="fullName"
+              type="text"
+              autoComplete="name"
+              required
+              className="p-2 border rounded w-full mt-1"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="checkout-address" className="block text-sm font-medium text-gray-700">
+              Address
+            </label>
+            <input
+              id="checkout-address"
+              name="address"
+              type="text"
+              autoComplete="street-address"
+              required
+              className="p-2 border rounded w-full mt-1"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label htmlFor="checkout-email" className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              id="checkout-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className="p-2 border rounded w-full mt-1"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
         </div>
 
-        {/* Billing Info */}
+        {/* 💳 Billing Input (masked) */}
         <div className="mb-4">
+          <label htmlFor="checkout-billing" className="block text-sm font-medium text-gray-700">
+            Card Number (for demo use 'x')
+          </label>
           <input
+            id="checkout-billing"
+            name="cardNumber"
             type="text"
-            placeholder="Card Number (for demo use 'x')"
-            className="p-2 border rounded w-full"
+            autoComplete="cc-number"
+            className="p-2 border rounded w-full mt-1"
             value={billing}
             onChange={(e) => setBilling(e.target.value.replace(/[0-9]/g, "x"))}
           />
         </div>
 
-        {/* Logistics Component */}
-        <Logistics onChange={(data) => setLogistics(data)} />
+        {/* 🚚 Logistics */}
+        <Logistics cartTotal={total} onChange={(data) => setLogistics(data)} />
 
-        {/* Order Summary */}
+        {/* 📦 Order Summary */}
         <div className="mt-6">
           <h3 className="text-lg font-semibold mb-2">Order Summary</h3>
           <ul className="divide-y">
@@ -123,11 +168,17 @@ const CheckoutModal = ({ open, onClose, total }) => {
                 <span>${(item.price * item.quantity).toFixed(2)}</span>
               </li>
             ))}
+            {logistics?.fee > 0 && (
+              <li className="py-2 flex justify-between text-red-600 font-semibold">
+                <span>Delivery Fee</span>
+                <span>${logistics.fee.toFixed(2)}</span>
+              </li>
+            )}
           </ul>
-          <p className="text-right font-semibold mt-2">Total: ${total.toFixed(2)}</p>
+          <p className="text-right font-semibold mt-2">Total: ${finalTotal.toFixed(2)}</p>
         </div>
 
-        {/* Submit Button */}
+        {/* ✅ Submit Order */}
         <div className="text-center mt-6">
           <button
             onClick={handleSubmitOrder}

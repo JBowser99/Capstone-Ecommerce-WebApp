@@ -82,6 +82,15 @@ const ReviewPage = () => {
   
   return (
     <div className="max-w-5xl mx-auto py-10 px-4">
+
+      {/* 🔙 Back Button */}
+      <button
+        onClick={() => navigate("/admin")}
+        className="mb-6 bg-gray-300 hover:bg-gray-400 text-sm text-black px-4 py-2 rounded"
+      >
+        ← Back to Admin Dashboard
+      </button>
+
       <h1 className="text-3xl font-bold text-center mb-6">
         🛡️ Admin Review Moderation Panel
       </h1>

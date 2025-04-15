@@ -67,9 +67,10 @@ const AdminPage = () => {
   };
 
   return (
-    <div className="min-h-screen max-w-7xl mx-auto px-4 bg-gray-100 relative">
+    <div className="min-h-screen max-w-7xl mx-auto px-4 bg-gray-100 relative pt-20">
+      <h1 className="text-3xl font-bold text-center pb-5">📦 Admin Inventory Dashboard</h1>
       {/* 🔘 Top Admin Buttons */}
-      <div className="absolute top-4 left-4 flex gap-2">
+      <div className="absolute top-0 flex gap-2">
         <button
           onClick={() => navigate("/")}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow"
@@ -82,16 +83,20 @@ const AdminPage = () => {
         >
           ⚠️ Review Moderation
         </button>
+        <button
+          onClick={() => navigate("/admin/review-orders")}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded shadow"
+        >
+          📦 Review Orders
+        </button>
+          
+        <button
+          onClick={handleLogout}
+          className="top-0 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow"
+        >
+          Logout
+        </button>
       </div>
-
-      <button
-        onClick={handleLogout}
-        className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow"
-      >
-        Logout
-      </button>
-
-      <h1 className="text-3xl font-bold mb-6 text-center">📦 Admin Inventory Dashboard</h1>
 
       {/* 📂 Category Filters */}
       <div className="flex flex-wrap justify-center gap-3 mb-8">
