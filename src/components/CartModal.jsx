@@ -54,7 +54,7 @@ const CartModal = ({ open, onClose }) => {
   );
 
   return (
-    <div onClick={onClose} className="fixed inset-0 bg-black/50 flex justify-center items-center z-40">
+    <div onClick={onClose} className="fixed inset-0 bg-black/80 flex justify-center items-center z-40">
       <div
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-lg w-full max-w-lg flex flex-col p-6 relative shadow-lg"

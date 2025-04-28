@@ -107,7 +107,7 @@ const ProfileModal = ({ open, onClose }) => {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 bg-black/50 flex justify-center items-center z-50"
+          className="fixed inset-0 bg-black/80 flex justify-center items-center z-50"
           onClick={onClose} // 💥 Close when clicking backdrop
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

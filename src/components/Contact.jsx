@@ -40,7 +40,7 @@ const Contact = () => {
         <h2 className="text-3xl font-semibold text-center mt-6 mx-2">Contact Us</h2>
       </div>
       <p className="text-center py-2">We’d love to hear from you! Send us a message below.</p>
-      <div className="max-w-lg mx-auto bg-white shadow-lg rounded-lg p-6">
+      <div className="max-w-lg mx-auto bg-green-950/60 border-green-600/60 border shadow-lg rounded-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
@@ -49,7 +49,7 @@ const Contact = () => {
             value={formData.name}
             onChange={handleChange}
             required
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2  border-green-600/60 border rounded"
           />
 
           <input
@@ -59,7 +59,7 @@ const Contact = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2  border-green-600/60 borderrounded"
           />
 
           <textarea
@@ -69,7 +69,7 @@ const Contact = () => {
             value={formData.message}
             onChange={handleChange}
             required
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2  border-green-600/60 border rounded"
           />
 
           <button

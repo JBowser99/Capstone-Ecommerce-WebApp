@@ -93,7 +93,7 @@ const OrderModal = ({ open, onClose }) => {
   if (!open) return null;
 
   return (
-    <div onClick={onClose} className="fixed inset-0 bg-black/50 flex justify-center items-center z-40">
+    <div onClick={onClose} className="fixed inset-0 bg-black/80 flex justify-center items-center z-40">
       <div
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 shadow-lg relative"

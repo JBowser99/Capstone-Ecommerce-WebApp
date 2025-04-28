@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Catalog from "./Catalog";
 import Contact from "./Contact";
 import SeedData from "./SeedData"; // ✅ SeedData button component
+import Stars from './Stars';
 //import GrantAccess from "./GrantAccess";
 
 const Home = ({ catalogRef, heroRef, contactRef }) => {
@@ -45,7 +46,9 @@ const Home = ({ catalogRef, heroRef, contactRef }) => {
       </div>
 
       {/* ✅ Catalog Section */}
-      <div ref={catalogRef} id="catalog-section" className="h-full w-auto border-t-2">
+      <div ref={catalogRef} id="catalog-section" className="h-full w-auto border-t-2 bg-green-900">
+        <div ref={catalogRef} id="catalog-section" className="h-full w-auto border-t-2 bg-black/20 backdrop-blur-lg backdrop-brightness-50">
+        <Stars/>
         <div className="sectionSpacing">
           <h2 className="text-3xl font-semibold text-center mt-6 mx-2">Food Catalog</h2>
         </div>
@@ -55,11 +58,12 @@ const Home = ({ catalogRef, heroRef, contactRef }) => {
 
         {/* 🧪 Admin-only Seed Data Button */}
         {user?.isAdmin && <SeedData />}
-      </div>
 
-      {/* ✅ Contact Section */}
-      <div ref={contactRef} id="contact-section" className="h-full w-auto">
+        {/* ✅ Contact Section */}
+      <div ref={contactRef} id="contact-section" className="h-full w-auto pb-10">
         <Contact />
+      </div>
+      </div>
       </div>
     </div>
   );
