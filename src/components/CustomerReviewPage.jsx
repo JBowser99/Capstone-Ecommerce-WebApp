@@ -1,4 +1,3 @@
-// src/components/ReviewPage.jsx
 import React, { useEffect, useState } from "react";
 import {
     collection,
@@ -13,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import CustomerAnalytics from "./CustomerAnalytics";
 
-const ReviewPage = () => {
+const CustomerReviewPage = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [flaggedReviews, setFlaggedReviews] = useState([]);
@@ -81,7 +80,7 @@ const ReviewPage = () => {
   )}
   
   return (
-    <div className="max-w-5xl mx-auto py-10 px-4">
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
 
       {/* 🔙 Back Button */}
       <button
@@ -150,4 +149,4 @@ const ReviewPage = () => {
   );
 };
 
-export default ReviewPage;
+export default CustomerReviewPage;

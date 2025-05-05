@@ -28,8 +28,8 @@ const Footer = () => {
   };
 
   return (
-    <footer className="mt-6 shadow-md">
-      <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between text-sm">
+    <footer>
+      <div className="h-14 container mx-auto px-6 flex flex-col md:flex-row items-center justify-between text-sm">
         <div className="text-center md:text-left">
           <h2 className="text-xl font-semibold">E-Shop</h2>
           <p className="text-gray-200">Your go-to store for fresh food delivery!</p>

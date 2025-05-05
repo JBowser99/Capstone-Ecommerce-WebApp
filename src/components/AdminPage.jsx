@@ -68,28 +68,38 @@ const AdminPage = () => {
 
   return (
     <div className="min-h-screen max-w-7xl mx-auto px-4 bg-gray-100 relative pt-20">
-      <h1 className="text-3xl font-bold text-center pb-5">📦 Admin Inventory Dashboard</h1>
+      <h1 className="text-3xl font-bold text-center pt-10 pb-8 bg-black/10 rounded-xl mt-8 mb-5 uppercase">📦 Admin Inventory Dashboard</h1>
       {/* 🔘 Top Admin Buttons */}
-      <div className="absolute top-0 flex gap-2">
+      <div className="absolute top-0 flex gap-2 sm:mx-[0%] md:mx-[25%]">
         <button
           onClick={() => navigate("/")}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow"
         >
           Go to Website
         </button>
+
         <button
           onClick={() => navigate("/admin/reviews")}
           className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow"
         >
-          ⚠️ Review Moderation
+          ⚠️ Customer Review Moderation
         </button>
+
         <button
           onClick={() => navigate("/admin/review-orders")}
           className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded shadow"
         >
-          📦 Review Orders
+          📦 Review Pickup Orders
         </button>
-          
+
+        {/* 🧮 NEW: Navigate to Financial Tracker */}
+        <button
+          onClick={() => navigate("/admin/financials")}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow"
+        >
+          💰 View Financial Tracker
+        </button>
+
         <button
           onClick={handleLogout}
           className="top-0 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow"

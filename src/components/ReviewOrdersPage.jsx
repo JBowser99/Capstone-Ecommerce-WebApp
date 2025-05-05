@@ -1,27 +1,11 @@
-// ✅ ReviewOrders.tsx — Admin-Only Live Pickup Queue
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { collection, onSnapshot, updateDoc, doc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
+import { useNavigate } from "react-router-dom";
 
-// Explicit Type for Order
-interface Order {
-  id: string;
-  name: string;
-  createdAt: any;
-  logistics?: {
-    pickupTime?: string;
-    deliveryMethod?: string;
-    instructions?: string;
-  };
-  items: {
-    name: string;
-    quantity: number;
-    price: number;
-  }[];
-}
-
-const ReviewOrders = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
+const ReviewOrdersPage = () => {
+  const [orders, setOrders] = useState([]);
+  const navigate = useNavigate();
 
   // 🔁 Real-time Listener: show all pickup orders not marked as complete
   useEffect(() => {
@@ -35,7 +19,10 @@ const ReviewOrders = () => {
             data.status !== "Cancelled"
           );
         })
-        .map((doc) => ({ id: doc.id, ...doc.data() })) as Order[];
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
       setOrders(filtered);
     });
@@ -43,7 +30,7 @@ const ReviewOrders = () => {
     return () => unsub();
   }, []);
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await updateDoc(doc(db, "orders", orderId), {
         status: newStatus,
@@ -55,7 +42,15 @@ const ReviewOrders = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded shadow-lg">
+    <div className="max-w-5xl mx-auto p-6 bg-white rounded shadow">
+      {/* 🔙 Back Button */}
+      <button
+        onClick={() => navigate("/admin")}
+        className="mb-6 bg-gray-300 hover:bg-gray-400 text-sm text-black px-4 py-2 rounded"
+      >
+        ← Back to Admin Dashboard
+      </button>
+
       {orders.length === 0 ? (
         <p className="text-center text-gray-500">No pickup orders pending.</p>
       ) : (
@@ -63,6 +58,7 @@ const ReviewOrders = () => {
           <h2 className="text-xl font-semibold mb-4 text-blue-600">
             🛍️ Pickup Orders In Progress
           </h2>
+
           {orders.map((order, idx) => (
             <div
               key={order.id}
@@ -72,7 +68,8 @@ const ReviewOrders = () => {
                 Order #{idx + 1} - {order.name}
               </p>
               <p className="text-sm text-gray-600 mb-1">
-                Placed: {order.createdAt?.toDate?.().toLocaleString()}
+                Placed:{" "}
+                {order.createdAt?.toDate?.().toLocaleString?.() || "Unknown"}
               </p>
               <p className="text-sm text-gray-700 mb-2">
                 Pickup Time: {order.logistics?.pickupTime || "Unscheduled"}
@@ -108,4 +105,4 @@ const ReviewOrders = () => {
   );
 };
 
-export default ReviewOrders;
+export default ReviewOrdersPage;

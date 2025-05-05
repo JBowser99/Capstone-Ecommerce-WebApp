@@ -62,7 +62,9 @@ const Home = ({ catalogRef, heroRef, contactRef }) => {
         {/* ✅ Contact Section */}
       <div ref={contactRef} id="contact-section" className="h-full w-auto pb-10">
         <Contact />
+      <div className="sectionSpacing py-10"></div>
       </div>
+      
       </div>
       </div>
     </div>

@@ -20,11 +20,11 @@ import OrderModal from "./components/OrderModal";
 import AdminPage from "./components/AdminPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LoadingScreen from "./components/LoadingScreen";
-import ReviewPage from "./components/ReviewPage"; // ✅ Import new admin panel
+import CustomerReviewPage from "./components/CustomerReviewPage"; // ✅ Import new admin panel
 import ReviewOrdersPage from "./components/ReviewOrdersPage"; // ✅ Import the page
-
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import FinancialTracker from "./components/FinancialTracker";
 
 // 🔁 Universal Redirect Component for Post-Login Routing
 const RedirectHandler = () => {
@@ -149,7 +149,7 @@ const App = () => {
               <AdminLayout>
                 <ProtectedRoute>
                   <AdminRoute>
-                    <ReviewPage />
+                    <CustomerReviewPage />
                   </AdminRoute>
                 </ProtectedRoute>
               </AdminLayout>
@@ -157,18 +157,30 @@ const App = () => {
           />
           {/*ReviewOrdersPage.tsx (admin panel for pickups)*/}
           <Route
-  path="/admin/review-orders"
-  element={
-    <AdminLayout>
-      <ProtectedRoute>
-        <AdminRoute>
-          <ReviewOrdersPage />
-        </AdminRoute>
-      </ProtectedRoute>
-    </AdminLayout>
-  }
-/>
-
+            path="/admin/review-orders"
+            element={
+              <AdminLayout>
+                <ProtectedRoute>
+                  <AdminRoute>
+                    <ReviewOrdersPage />
+                  </AdminRoute>
+                </ProtectedRoute>
+              </AdminLayout>
+            }
+          />
+          {/* FinancialTracker */}
+           <Route
+            path="/admin/financials"
+            element={
+              <AdminLayout>
+                <ProtectedRoute>
+                  <AdminRoute>
+                    <FinancialTracker />
+                  </AdminRoute>
+                </ProtectedRoute>
+              </AdminLayout>
+            }
+          />
           {/* ✅ Fallback */}
           <Route path="*" element={<Navigate to="/auth/Login" replace />} />
         </Routes>
